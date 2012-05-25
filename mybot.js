@@ -15,8 +15,6 @@ function Fruit(x_pos, y_pos, fruit_type) {
 	return true;
 }
 
-
-
 function calculate_target(board){
 	// find closest fruit of appropriate type and set as target
    var fruits = fruits_in_play(board);
@@ -28,13 +26,14 @@ function calculate_target(board){
    var ideal_fruit = -1;
    for (var i = 0; i < fruits.length; i++){
 		if (distance(fruits[i]) < min_dist){
-			
-			if (desired_fruit != -1 && fruits[i].fruit_type == desired_fruit){
-				ideal_fruit = i;
-				min_dist = distance(fruits[i]);
-				min_index = i;
+			if (fruits[i].fruit_type == desired_fruit){
+					//if (opponent_distance(fruits[i]) >= distance(fruits[i])){
+						ideal_fruit = i;
+						min_dist = distance(fruits[i]);
+						min_index = i;
+					//}
 			}
-			else if(desired_fruit == -1){
+			else if (desired_fruit = -1){
 				min_dist = distance(fruits[i]);
 				min_index = i;
 				ideal_fruit = min_index;
@@ -76,7 +75,8 @@ function fruit_viable(fruit_type){
 	var i_own = get_my_item_count(fruit_type);
 	var o_own = get_opponent_item_count(fruit_type);
 	var remaining = get_total_item_count(fruit_type) - (i_own + o_own);
-	if (remaining + o_own > i_own && remaining + i_own > o_own){
+	if (remaining + i_own > o_own){
+		// Make sure that person isn't about to pick it up.
 		return true;
 	}
 	return false;
@@ -108,6 +108,11 @@ function distance(fruit){
 	return Math.abs(fruit.x_pos-get_my_x()) + Math.abs(fruit.y_pos-get_my_y());
 }
 
+function opponent_distance(fruit){
+	// as player calcs opponent distance.
+	return Math.abs(fruit.x_pos-get_opponent_x()) + Math.abs(fruit.y_pos-get_opponent_y());
+}
+
 function fruits_in_play(board){
 	var fruits = new Array();
 	// Find all fruits.
@@ -135,14 +140,14 @@ function make_move() {
 	   if (current_pos > 0){
 		   if (get_my_x() == target.x_pos && get_my_y() == target.y_pos) {
 			   if (target.fruit_type == 1){
-					apple_taken = true;
+					apple_cleared = true;
 			   }
 			   target = null;
 			   return TAKE;
 			}
 			else {
 				// Might as well pick it up if it helps our cause.
-				if(fruit_viable(current_pos))
+				if(fruit_viable(current_pos) && apple_cleared == true)
 					return TAKE;
 			}
 	   }
