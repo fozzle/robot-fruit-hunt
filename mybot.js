@@ -1,10 +1,13 @@
-var target = null;
+var target;
+var apple_cleared;
 
 function new_game() {
-	
+	target = null;
+	apple_cleared = false;
 }
 
 function Fruit(x_pos, y_pos, fruit_type) {
+	// Just a data holder
 	this.x_pos = x_pos;
 	this.y_pos = y_pos;
 	this.fruit_type = fruit_type;
@@ -12,8 +15,37 @@ function Fruit(x_pos, y_pos, fruit_type) {
 	return true;
 }
 
+
+
+function calculate_target(board){
+	// find closest fruit of appropriate type and set as target
+   var fruits = fruits_in_play(board);
+   var desired_fruit = calculate_desired_fruit();
+   
+   // Find closest fruit that we want.
+   var min_dist = 999999999;
+   var min_index = -1;
+   var ideal_fruit = -1;
+   for (var i = 0; i < fruits.length; i++){
+		if (distance(fruits[i]) < min_dist){
+			
+			if (desired_fruit != -1 && fruits[i].fruit_type == desired_fruit){
+				ideal_fruit = i;
+				min_dist = distance(fruits[i]);
+				min_index = i;
+			}
+			else if(desired_fruit == -1){
+				min_dist = distance(fruits[i]);
+				min_index = i;
+				ideal_fruit = min_index;
+			}
+		}
+   }
+   return fruits[ideal_fruit];
+}
+
 function calculate_desired_fruit(){
-	
+	// Helper function, find type of fruit we want.
 	var num_items = get_number_of_item_types();
 	var min_fruit = -1;
 	var min_remain = 99999;
@@ -30,7 +62,7 @@ function calculate_desired_fruit(){
 		need to pursue a category that you have already won. Furthermore
 		if it's impossible to win in a fruit category, just forget it.*/
 		
-		if (remaining < min_remain && remaining > 0 && (remaining + o_own) > i_own && (remaining + i_own) > o_own){
+		if (remaining < min_remain && remaining > 0 && fruit_viable(i)){
 			min_fruit = i;
 			min_remain = remaining;
 		}
@@ -39,7 +71,22 @@ function calculate_desired_fruit(){
 	return min_fruit;
 }
 
+function fruit_viable(fruit_type){
+	// Helper function to see if the fruit is worth stopping for.
+	var i_own = get_my_item_count(fruit_type);
+	var o_own = get_opponent_item_count(fruit_type);
+	var remaining = get_total_item_count(fruit_type) - (i_own + o_own);
+	if (remaining + o_own > i_own && remaining + i_own > o_own){
+		return true;
+	}
+	return false;
+}
+
 function move(close_fruit){
+	
+   /* Ideally we'd take the path with the most
+   viable fruit. Viable being, it will help us. */
+   
    if (get_my_x() > close_fruit.x_pos){
 		return WEST;
    }
@@ -86,39 +133,22 @@ function make_move() {
    if (target != null && board[target.x_pos][target.y_pos] > 0){
 	   var current_pos = board[get_my_x()][get_my_y()];
 	   if (current_pos > 0){
-		   if (current_pos == target.fruit_type) {
+		   if (get_my_x() == target.x_pos && get_my_y() == target.y_pos) {
+			   if (target.fruit_type == 1){
+					apple_taken = true;
+			   }
 			   target = null;
 			   return TAKE;
 			}
 			else {
-				//return TAKE;
+				// Might as well pick it up if it helps our cause.
+				if(fruit_viable(current_pos))
+					return TAKE;
 			}
 	   }
    }
    
-   
-   var fruits = fruits_in_play(board);
-   
-   
-   // Find closest fruit that we want.
-   var min_dist = 999999999;
-   var min_index = -1;
-   var ideal_fruit = -1;
-   for (var i = 0; i < fruits.length; i++){
-		if (distance(fruits[i]) < min_dist){
-			var desired_fruit = calculate_desired_fruit();
-			if (desired_fruit != -1 && fruits[i].fruit_type == desired_fruit){
-				ideal_fruit = i;
-				min_dist = distance(fruits[i]);
-				min_index = i;
-			}
-			else if(desired_fruit == -1){
-				return PASS;
-			}
-		}
-   }
-   
    // Move towards it.
-   target = fruits[ideal_fruit];
+   target = calculate_target(board);
    return move(target)
 }
